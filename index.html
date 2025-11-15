@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Weather Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons for aesthetic appeal -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Configure Tailwind for 'Inter' font -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary': '#4f46e5', // Indigo-600
+                        'secondary': '#60a5fa', // Blue-400
+                        'background': '#f3f4f6', // Gray-100
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for spaciousness and visual appeal */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #a7f3d0 0%, #a5b4fc 100%); /* Soft Gradient Background */
+        }
+        .weather-card {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out;
+        }
+        .weather-card:hover {
+            transform: translateY(-5px);
+        }
+        .temp-display {
+            line-height: 1; /* Keep the large text snug */
+        }
+        /* Ensure responsive height for full page fill on all devices */
+        #app-container {
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container" class="w-full flex flex-col items-center justify-center p-4">
+
+        <!-- Main Input and Title Card -->
+        <div class="weather-card bg-white p-6 md:p-10 rounded-xl shadow-2xl w-full max-w-lg mb-8">
+            <h1 class="text-3xl font-extrabold text-gray-800 mb-6 text-center">
+                <i data-lucide="cloud-sun" class="inline-block w-8 h-8 mr-2 text-primary"></i>
+                Dynamic Weather
+            </h1>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <input
+                    type="text"
+                    id="locationInput"
+                    placeholder="Enter city, ZIP, or coordinates (e.g., London)"
+                    class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-gray-700"
+                    aria-label="Location input"
+                >
+                <button
+                    id="fetchButton"
+                    class="bg-primary hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-md flex items-center justify-center"
+                >
+                    <i data-lucide="search" class="w-5 h-5 mr-2"></i>
+                    Get Weather
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Indicator & Error Message Area -->
+        <div id="statusMessage" class="text-lg font-semibold text-gray-700 hidden p-4 bg-yellow-100 border-l-4 border-yellow-500 rounded-lg w-full max-w-lg mb-8">
+            <!-- Messages (Loading or Error) will be displayed here -->
+        </div>
+
+        <!-- Weather Display Card (Initially hidden) -->
+        <div id="weatherResult" class="weather-card bg-white p-8 md:p-12 rounded-xl w-full max-w-lg hidden">
+            <div class="text-center">
+
+                <!-- Location and Time -->
+                <p id="locationName" class="text-3xl font-semibold text-gray-800 mb-2">City, Country</p>
+                <p id="localTime" class="text-sm text-gray-500 mb-6">Local Time: --</p>
+
+                <!-- Temperature and Icon -->
+                <div class="flex flex-col items-center justify-center mb-8">
+                    <img id="weatherIcon" src="" alt="Weather Icon" class="w-20 h-20 mb-2">
+                    <p id="temperature" class="temp-display text-7xl md:text-8xl font-extrabold text-primary">--°C</p>
+                    <p id="condition" class="text-xl font-medium text-gray-600 mt-2">Condition Description</p>
+                </div>
+
+                <!-- Detailed Metrics (Spacious Grid) -->
+                <div class="grid grid-cols-2 gap-4 text-left border-t pt-6 mt-6">
+
+                    <!-- Humidity -->
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <i data-lucide="droplet" class="w-6 h-6 text-secondary"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Humidity</p>
+                            <p id="humidity" class="text-lg font-bold text-gray-800">--%</p>
+                        </div>
+                    </div>
+
+                    <!-- Wind Speed -->
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <i data-lucide="wind" class="w-6 h-6 text-secondary"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Wind</p>
+                            <p id="windSpeed" class="text-lg font-bold text-gray-800">-- km/h</p>
+                        </div>
+                    </div>
+
+                    <!-- Feels Like -->
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <i data-lucide="thermometer" class="w-6 h-6 text-secondary"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Feels Like</p>
+                            <p id="feelsLike" class="text-lg font-bold text-gray-800">--°C</p>
+                        </div>
+                    </div>
+
+                    <!-- AQI (Air Quality Index) -->
+                    <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                        <i data-lucide="factory" class="w-6 h-6 text-secondary"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-500">Air Quality</p>
+                            <p id="aqi" class="text-lg font-bold text-gray-800">--</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script type="text/javascript">
+        // Initializing Lucide icons after the HTML is rendered
+        document.addEventListener('DOMContentLoaded', () => {
+            // Renders all the lucide icons used in the HTML
+            lucide.createIcons();
+        });
+
+        // --- Configuration ---
+        const API_KEY = "c0e4f3eeabce4ef0892115828250211";
+        const BASE_URL = "http://api.weatherapi.com/v1/current.json";
+        const MAX_RETRIES = 3;
+
+        // --- DOM Elements ---
+        const locationInput = document.getElementById('locationInput');
+        const fetchButton = document.getElementById('fetchButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const weatherResult = document.getElementById('weatherResult');
+
+        // --- Utility Functions ---
+
+        /**
+         * Hides or shows the weather result card and status message.
+         * @param {boolean} showResult - True to show weather card, false to hide.
+         * @param {string} statusHtml - HTML content for the status message (error or loading).
+         * @param {string} statusType - 'loading', 'error', or 'hidden'.
+         */
+        function updateUIState(showResult, statusHtml, statusType) {
+            weatherResult.classList.toggle('hidden', !showResult);
+            statusMessage.classList.toggle('hidden', statusType === 'hidden');
+            statusMessage.innerHTML = statusHtml;
+
+            // Update styling based on status type
+            statusMessage.classList.remove('bg-yellow-100', 'border-yellow-500', 'bg-red-100', 'border-red-500');
+            if (statusType === 'loading') {
+                statusMessage.classList.add('bg-yellow-100', 'border-yellow-500', 'text-yellow-800');
+            } else if (statusType === 'error') {
+                statusMessage.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
+            }
+        }
+
+        /**
+         * Maps numerical AQI score to a descriptive string.
+         * @param {number} aqiIndex - The air quality index number (1-6).
+         * @returns {string} The descriptive quality.
+         */
+        function getAqiDescription(aqiIndex) {
+            switch(aqiIndex) {
+                case 1: return "Good";
+                case 2: return "Moderate";
+                case 3: return "Unhealthy for Sensitive Group";
+                case 4: return "Unhealthy";
+                case 5: return "Very Unhealthy";
+                case 6: return "Hazardous";
+                default: return "N/A";
+            }
+        }
+
+        /**
+         * Fetches weather data with exponential backoff for resilience.
+         * @param {string} location - The query string (city name, zip code, etc.).
+         * @param {number} retryCount - Current retry attempt.
+         */
+        async function fetchWeatherWithRetry(location, retryCount = 0) {
+            const url = `${BASE_URL}?key=${API_KEY}&q=${encodeURIComponent(location)}&aqi=yes`;
+
+            try {
+                // Show loading state
+                updateUIState(false, `<i data-lucide="loader-circle" class="w-5 h-5 animate-spin inline-block mr-2"></i> Loading weather for ${location}...`, 'loading');
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    // Check for common API errors (e.g., location not found)
+                    const errorData = await response.json();
+                    if (errorData && errorData.error && errorData.error.message) {
+                        throw new Error(`API Error: ${errorData.error.message}`);
+                    }
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                updateUI(data); // Success! Update UI with data.
+
+            } catch (error) {
+                console.error("Fetch attempt failed:", error.message);
+
+                if (retryCount < MAX_RETRIES) {
+                    const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s delay
+                    console.log(`Retrying in ${delay / 1000}s...`);
+                    // Display retry message (optional, but good for debugging)
+                    updateUIState(false, `<i data-lucide="alert-triangle" class="w-5 h-5 inline-block mr-2"></i> Fetch failed. Retrying in ${delay / 1000} seconds...`, 'error');
+
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    await fetchWeatherWithRetry(location, retryCount + 1); // Recursive retry
+
+                } else {
+                    // Final error message after all retries
+                    updateUIState(false, `<i data-lucide="alert-octagon" class="w-5 h-5 inline-block mr-2"></i> Could not retrieve weather data. Please check the location spelling or try again later. Details: ${error.message}`, 'error');
+                }
+            } finally {
+                // Re-render icons after DOM manipulation in updateUIState
+                lucide.createIcons();
+            }
+        }
+
+
+        /**
+         * Populates the weather display card with fetched data.
+         * @param {object} data - The weather API response object.
+         */
+        function updateUI(data) {
+            // Check for valid data structure
+            if (!data || !data.location || !data.current) {
+                updateUIState(false, `<i data-lucide="frown" class="w-5 h-5 inline-block mr-2"></i> Received invalid data format from the API.`, 'error');
+                return;
+            }
+
+            const { location, current } = data;
+            const aqiText = current.air_quality ? getAqiDescription(current.air_quality['us-epa-index']) : 'N/A';
+
+            document.getElementById('locationName').textContent = `${location.name}, ${location.country}`;
+            document.getElementById('localTime').textContent = `Local Time: ${location.localtime}`;
+
+            // Main Metrics
+            document.getElementById('temperature').textContent = `${Math.round(current.temp_c)}°C`;
+            document.getElementById('condition').textContent = current.condition.text;
+            document.getElementById('weatherIcon').src = current.condition.icon.replace('64x64', '128x128'); // Use larger icon if possible
+            document.getElementById('weatherIcon').onerror = function() {
+                // Placeholder fallback if the icon link is broken
+                this.src = "https://placehold.co/128x128/f3f4f6/a5b4fc?text=ICON";
+                this.alt = "Icon unavailable";
+            };
+
+            // Detailed Metrics
+            document.getElementById('humidity').textContent = `${current.humidity}%`;
+            document.getElementById('windSpeed').textContent = `${current.wind_kph} km/h`;
+            document.getElementById('feelsLike').textContent = `${Math.round(current.feelslike_c)}°C`;
+            document.getElementById('aqi').textContent = aqiText;
+
+            // Show the result and hide status messages
+            updateUIState(true, '', 'hidden');
+        }
+
+        // --- Event Listeners ---
+
+        function handleFetch() {
+            const location = locationInput.value.trim();
+            if (location) {
+                fetchWeatherWithRetry(location);
+            } else {
+                updateUIState(false, `<i data-lucide="info" class="w-5 h-5 inline-block mr-2"></i> Please enter a valid location.`, 'error');
+            }
+        }
+
+        fetchButton.addEventListener('click', handleFetch);
+        locationInput.addEventListener('keypress', (e) => {
+            // Check if the Enter key was pressed
+            if (e.key === 'Enter') {
+                handleFetch();
+            }
+        });
+
+    </script>
+</body>
+</html>
